@@ -19,16 +19,6 @@
       "toolArgs": [
         "--dart-define-from-file=config/supabase.json"
       ]
-    },
-    {
-      "name": "Daybook (Design preview — sample data)",
-      "request": "launch",
-      "type": "dart",
-      "program": "lib/main.dart",
-      "deviceId": "chrome",
-      "toolArgs": [
-        "--dart-define=DAYBOOK_DEMO=true"
-      ]
     }
   ]
 }

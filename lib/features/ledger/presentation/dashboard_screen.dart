@@ -179,8 +179,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
               children: [
                 Flexible(
                   child: Text(
-                    'View all transactions',
-                    style: TextStyle(fontSize: 13),
+                    'View all entries',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                   ),
                 ),
                 Icon(Icons.north_east, size: 17),
@@ -247,36 +247,39 @@ class _TotalCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     title,
-                    style: TextStyle(color: color, fontSize: 14),
-                  ),
-                ),
-                Icon(Icons.north_east, color: color, size: 16),
-              ],
-            ),
-            const SizedBox(height: 9),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Expanded(
-                  flex: 3,
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      amount == null ? '—' : money(amount!),
-                      style: heading(29, color: color),
+                    style: TextStyle(
+                      color: color,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
+              ],
+            ),
+            const SizedBox(height: 9),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                amount == null ? '—' : money(amount!),
+                style: heading(31, color: color),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
                 Expanded(
-                  flex: 2,
                   child: Text(
                     hint,
-                    textAlign: TextAlign.right,
-                    style: TextStyle(color: color, fontSize: 10, height: 1.5),
+                    style: TextStyle(
+                      color: color,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      height: 1.4,
+                    ),
                   ),
                 ),
+                Icon(Icons.chevron_right, color: color, size: 20),
               ],
             ),
           ],

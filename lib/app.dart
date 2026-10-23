@@ -5,15 +5,9 @@ import 'features/ledger/presentation/accounts_screen.dart';
 import 'features/ledger/presentation/design.dart';
 
 class DaybookApp extends StatelessWidget {
-  const DaybookApp({
-    super.key,
-    this.repository,
-    this.startupError,
-    this.preview = false,
-  });
+  const DaybookApp({super.key, this.repository, this.startupError});
   final LedgerRepository? repository;
   final Object? startupError;
-  final bool preview;
   @override
   Widget build(BuildContext context) => MaterialApp(
     title: 'Daybook',
@@ -24,36 +18,7 @@ class DaybookApp extends StatelessWidget {
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 430),
-          child: Column(
-            children: [
-              if (preview)
-                const Material(
-                  color: Color(0xffe2e7d9),
-                  child: SafeArea(
-                    bottom: false,
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(
-                          vertical: 7,
-                          horizontal: 12,
-                        ),
-                        child: Text(
-                          'DESIGN PREVIEW · SAMPLE DATA · NOT SAVED',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 9,
-                            letterSpacing: .7,
-                            color: green,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              Expanded(child: child!),
-            ],
-          ),
+          child: child!,
         ),
       ),
     ),

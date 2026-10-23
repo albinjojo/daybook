@@ -26,16 +26,14 @@ The normal app connects through the existing Supabase repository and JSON config
 ## Architecture
 
 `main.dart` chooses the repository and handles startup configuration errors.
-`app.dart` owns theme, navigation container and the explicit preview banner.
+`app.dart` owns the theme and navigation container. The final app has no preview banner.
 `features/ledger/presentation` contains independent screens, shared design widgets
 and entry sheets. Screens only depend on the `LedgerRepository` interface.
 `features/ledger/domain` keeps amounts, validation and filters independent of Flutter.
 `features/ledger/data` contains the Supabase adapter and a separate in-memory preview
 adapter. No screen issues Supabase calls directly. SQL remains in versioned migrations.
 
-Preview mode is selected explicitly with `DAYBOOK_DEMO=true`; it never activates
-because a live request failed. Sample data resets on restart and never reaches Supabase.
-The live build does not contain a sample-data fallback.
+The final app always uses Supabase. The in-memory repository is retained only as a test fixture.
 
 ## Verification
 
@@ -65,18 +63,7 @@ Live app:
 flutter run -d chrome --dart-define-from-file=config/supabase.json
 ```
 
-Design preview (no credentials or hosted tables required):
-```powershell
-flutter run -d chrome --dart-define=DAYBOOK_DEMO=true
-```
-
-Standalone phone preview:
-```powershell
-flutter build web --output=build/web-preview --dart-define=DAYBOOK_DEMO=true
-Copy-Item tooling/phone-preview.html build/web-preview/phone.html
-node tooling/preview-server.cjs build/web-preview 4175
-```
-Open `http://127.0.0.1:4175/phone.html`. VS Code also has live and preview launch choices.
+The sample-data launch option was removed from the final application.
 
 ## Limits
 
@@ -99,7 +86,7 @@ Reloaded the app completely and reopened the account: received 1,250.50, spent
 225.75 and balance 1,024.75 persisted. An independent read of the hosted Data API
 confirmed both rows, custom details and expense version 2. The dummy received entry
 was then renamed to `DUMMY trip income` to match the ledger-only terminology.
-Dummy records remain in the clearly labelled test account for review.
+The two dummy records were soft-deleted and the test account archived on 23 October 2026. No test account is shown in the active app.
 
 All 12 Flutter tests passed again after the wording change. Public read/add/edit
 access is enabled for now at the user's request. This remains a public no-login
@@ -130,3 +117,7 @@ Migration 202610230002_entry_deletion.sql is applied to the hosted project.
 Validation: 17 Flutter tests and 31 local PostgreSQL checks passed; analyzer clean.
 
 Live Flutter verification passed: deleted the existing DUMMY fuel expense, observed zero entries and zero expense total, then used Undo and observed the same entry and INR 225.75 restored. No business records were touched.
+
+## Final app readability — 23 October 2026
+
+Entry cards now use 18px bold names, 19px bold amounts, readable dates, clear borders and spacing. Dashboard links use prominent 14px bold labels beneath each total. All cards remain tappable. Removed the sample-mode entry point and banner; archived the known test account and soft-deleted its two dummy entries. Validation: 19 Flutter tests, including narrow-phone entry navigation.

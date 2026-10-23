@@ -68,6 +68,23 @@ void main() {
     }
     expect(tester.takeException(), isNull);
   });
+  testWidgets('entry cards remain readable on a narrow phone', (tester) async {
+    await start(tester, width: 320);
+    await tester.tap(find.text('Innova'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('View expenses'));
+    await tester.pumpAndSettle();
+    expect(find.text('Tap an entry to view or edit it.'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Diesel'),
+      120,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.text('Diesel'));
+    await tester.pumpAndSettle();
+    expect(find.text('Indian Oil, Adyar'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
   testWidgets('delete confirmation, updated total and Undo', (tester) async {
     final repo = PreviewLedgerRepository();
     await start(tester, repository: repo);
@@ -178,8 +195,10 @@ void main() {
     await start(tester, repository: repo);
     await tester.tap(find.text('Kia Carens'));
     await tester.pumpAndSettle();
-    await tester.ensureVisible(
+    await tester.scrollUntilVisible(
       find.widgetWithText(OutlinedButton, 'Money spent'),
+      180,
+      scrollable: find.byType(Scrollable).first,
     );
     await tester.tap(find.widgetWithText(OutlinedButton, 'Money spent'));
     await tester.pumpAndSettle();

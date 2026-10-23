@@ -289,8 +289,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
               children: [
                 const Expanded(
                   child: Text(
-                    'Your transactions',
-                    style: TextStyle(fontSize: 16),
+                    'Your entries',
+                    style: TextStyle(fontSize: 19, fontWeight: FontWeight.w700),
                   ),
                 ),
                 if (page != null)
@@ -335,7 +335,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 );
               },
             ),
-            const SizedBox(height: 9),
+            const SizedBox(height: 12),
+            const Text(
+              'Tap an entry to view or edit it.',
+              style: TextStyle(color: ink, fontSize: 14, height: 1.5),
+            ),
+            const SizedBox(height: 14),
             if (error != null)
               Problem(error!, retry: () => load())
             else ...[
@@ -391,63 +396,89 @@ class _EntryRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final draft = entry.draft;
     final received = draft.type == EntryType.received;
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 21),
-        decoration: const BoxDecoration(
-          border: Border(bottom: BorderSide(color: line)),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Material(
+        color: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+          side: const BorderSide(color: Color(0xffd7ddd4)),
         ),
-        child: Row(
-          children: [
-            Container(
-              width: 33,
-              height: 38,
-              decoration: BoxDecoration(
-                color: received ? receivedBg : spentBg,
-                borderRadius: BorderRadius.circular(7),
-              ),
-              child: Icon(
-                received ? Icons.south_west : Icons.north_east,
-                size: 16,
-                color: received ? green : red,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    draft.name,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(10),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 38,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: received ? receivedBg : spentBg,
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  const SizedBox(height: 5),
-                  Text(
-                    '${draft.details.isEmpty ? '' : '${draft.details.first.label} · ${draft.details.first.value} · '}${displayDate(draft.date)}',
-                    style: const TextStyle(
-                      color: muted,
-                      fontSize: 11,
-                      height: 1.6,
-                    ),
+                  child: Icon(
+                    received ? Icons.south_west : Icons.north_east,
+                    size: 20,
+                    color: received ? green : red,
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        draft.name,
+                        style: const TextStyle(
+                          color: ink,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          height: 1.35,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        displayDate(draft.date),
+                        style: const TextStyle(
+                          color: Color(0xff59675f),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      if (draft.details.isNotEmpty) ...[
+                        const SizedBox(height: 5),
+                        Text(
+                          '${draft.details.first.label}: ${draft.details.first.value}',
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Color(0xff59675f),
+                            fontSize: 13,
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 12),
+                      Text(
+                        '${received ? '+' : '−'} ${money(BigInt.from(draft.amount.paise))}',
+                        style: TextStyle(
+                          color: received ? green : red,
+                          fontSize: 19,
+                          fontWeight: FontWeight.w700,
+                          height: 1.3,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 6),
+                const Icon(Icons.chevron_right, size: 22, color: ink),
+              ],
             ),
-            const SizedBox(width: 8),
-            Flexible(
-              child: Text(
-                '${received ? '+' : '−'} ${money(BigInt.from(draft.amount.paise))}',
-                style: TextStyle(color: received ? green : red, fontSize: 14),
-                textAlign: TextAlign.right,
-              ),
-            ),
-            const SizedBox(width: 5),
-            const Icon(Icons.chevron_right, size: 15, color: muted),
-          ],
+          ),
         ),
       ),
     );
