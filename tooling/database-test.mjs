@@ -1,0 +1,63 @@
+import { PGlite } from '@electric-sql/pglite';
+import { readFile } from 'node:fs/promises';
+import assert from 'node:assert/strict';
+const db = new PGlite();
+const sql = async path => readFile(new URL(path,import.meta.url),'utf8');
+let checks=0;
+const ok = (value,message) => {assert.ok(value,message);checks++;};
+const fail = async (query,params=[]) => {
+  await assert.rejects(db.query(query,params));checks++;
+};
+try {
+  await db.exec('create role anon; create role authenticated; create role service_role bypassrls;');
+  await db.exec(await sql('../supabase/migrations/202610230001_daybook.sql'));
+  await db.exec('set role anon');
+  await fail('select * from public.accounts');
+  await fail("select public.daybook_history(gen_random_uuid(),'2026-10-01','2026-11-01')");
+  await db.exec('reset role');
+  await db.exec(await sql('../supabase/manual/enable_public_demo.sql'));
+  await db.exec('set role anon');
+  const a='11111111-1111-4111-8111-111111111111',b='22222222-2222-4222-8222-222222222222';
+  await db.query('insert into public.accounts(id,name) values ($1,$2),($3,$4)',[a,' Innova ',b,'Office']);
+  ok((await db.query('select name from public.accounts where id=$1',[a])).rows[0].name==='Innova','Names trimmed');
+  const add=async(id,account,type,amount,date,name='Fuel',details=[]) => db.query(
+    'insert into public.transactions(id,account_id,type,amount_paise,transaction_date,name,custom_details) values ($1,$2,$3,$4,$5,$6,$7)',
+    [id,account,type,amount,date,name,JSON.stringify(details)]);
+  const one='33333333-3333-4333-8333-333333333333',two='44444444-4444-4444-8444-444444444444';
+  await add(one,a,'received',10001,'2026-10-01','Trip',[{label:'Driver',value:'Ramesh'}]);
+  await add(two,a,'spent',2000,'2026-10-31','Fuel 100%');
+  await add('55555555-5555-4555-8555-555555555555',a,'spent',3000,'2026-11-01');
+  await add('66666666-6666-4666-8666-666666666666',b,'spent',9999,'2026-10-10');
+  const history=async(type=null,search='',limit=50,offset=0) => (await db.query(
+    "select public.daybook_history($1,'2026-10-01','2026-11-01',$2,$3,$4,$5) as data",[a,type,search,limit,offset])).rows[0].data;
+  let result=await history(null,'',1);
+  ok(result.count===2 && result.entries.length===1,'Pagination does not limit total');
+  ok(result.received_paise==='10001' && result.spent_paise==='2000' && result.balance_paise==='8001','Exact scoped totals and end date exclusion');
+  ok(result.entries[0].id===two,'Newest transaction first');
+  ok((await history(null,'Ramesh')).count===1,'Custom details search');
+  ok((await history(null,'%')).count===1,'Search percent is literal');
+  ok((await history('spent')).count===1,'Type filter');
+  ok((await history(null,'not found')).balance_paise==='0','Empty totals are zero');
+  await fail("select public.daybook_history($1,'2026-10-01','2026-11-01',null,'',101,0)",[a]);
+  await fail('insert into public.accounts(name) values ($1)',['   ']);
+  await fail("insert into public.transactions(account_id,type,amount_paise,name) values ($1,'spent',0,'Bad')",[a]);
+  await fail("insert into public.transactions(account_id,type,amount_paise,name,custom_details) values ($1,'spent',1,'Bad','{}')",[a]);
+  await fail("insert into public.transactions(account_id,type,amount_paise,name,custom_details) values ($1,'spent',1,'Bad','[{\"label\":\"\",\"value\":\"x\"}]')",[a]);
+  await fail("insert into public.transactions(account_id,type,amount_paise,name,custom_details) values ($1,'spent',1,'Bad','[{\"label\":\"Driver\"}]')",[a]);
+  await fail('delete from public.transactions where id=$1',[one]);
+  await fail('update public.transactions set account_id=$1 where id=$2',[b,one]);
+  const first=await db.query("update public.transactions set name='Changed' where id=$1 and version=1 returning version",[one]);
+  ok(first.rows[0].version===2,'Version increments on edit');
+  ok((await db.query("update public.transactions set name='Stale edit' where id=$1 and version=1 returning id",[one])).rows.length===0,'Stale edits rejected');
+  await db.query('update public.accounts set is_archived=true where id=$1',[a]);
+  await fail("insert into public.transactions(account_id,type,amount_paise,name) values ($1,'spent',1,'Archived')",[a]);
+  ok((await history()).count===2,'Archived history stays available');
+  await db.exec('reset role');
+  await db.exec(await sql('../supabase/manual/disable_public_demo.sql'));
+  await db.exec('set role anon');
+  await fail('select * from public.accounts');
+  await fail("insert into public.accounts(name) values ('Still blocked')");
+  await db.exec('reset role');
+  ok((await db.query('select count(*)::int as n from public.transactions')).rows[0].n===4,'Disabling access preserves data');
+  console.log(`PASS: ${checks} database checks (local PostgreSQL/PGlite). No hosted data changed.`);
+} finally {await db.close();}
