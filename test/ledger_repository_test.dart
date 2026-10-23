@@ -21,6 +21,50 @@ void main() {
     return SupabaseLedgerRepository(client);
   }
 
+  test('delete and undo match identity, version and previous state', () async {
+    final draft = EntryDraft(
+      type: EntryType.spent,
+      amount: Money.parse('20'),
+      name: 'Fuel',
+      date: '2026-10-23',
+    );
+    var calls = 0;
+    final repo = repository((request) async {
+      final deleting = calls++ == 0;
+      expect(request.method, 'PATCH');
+      expect(request.url.queryParameters['id'], 'eq.entry');
+      expect(request.url.queryParameters['account_id'], 'eq.account');
+      expect(
+        request.url.queryParameters['version'],
+        deleting ? 'eq.1' : 'eq.2',
+      );
+      expect(
+        request.url.queryParameters['is_deleted'],
+        deleting ? 'eq.false' : 'eq.true',
+      );
+      expect(jsonDecode(request.body), {'is_deleted': deleting});
+      return http.Response(
+        jsonEncode({
+          'id': 'entry',
+          'account_id': 'account',
+          'version': deleting ? 2 : 3,
+          ...draft.toJson(),
+        }),
+        200,
+        headers: {'content-type': 'application/json'},
+        request: request,
+      );
+    });
+    final entry = LedgerEntry(
+      id: 'entry',
+      accountId: 'account',
+      draft: draft,
+      version: 1,
+    );
+    final deleted = await repo.setEntryDeleted(entry, deleted: true);
+    final restored = await repo.setEntryDeleted(deleted, deleted: false);
+    expect(restored.version, 3);
+  });
   test(
     'history sends the same account/date/search/type with page bounds',
     () async {

@@ -9,7 +9,7 @@ grant insert (id,name,icon,is_archived) on public.accounts to anon;
 grant update (name,icon,is_archived) on public.accounts to anon;
 grant insert (id,account_id,type,amount_paise,name,transaction_date,custom_details)
   on public.transactions to anon;
-grant update (type,amount_paise,name,transaction_date,custom_details)
+grant update (type,amount_paise,name,transaction_date,custom_details,is_deleted)
   on public.transactions to anon;
 create policy daybook_demo_read on public.accounts for select to anon using (true);
 create policy daybook_demo_add on public.accounts for insert to anon with check (true);

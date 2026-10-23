@@ -131,10 +131,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
             _TotalCard(
               title: 'Balance',
               amount: summary?.balancePaise,
-              hint: 'Received − Spent\nselected month',
+              hint: 'View all entries',
               color: ink,
               background: Colors.white,
               icon: Icons.drag_handle,
+              onTap: () => history(null),
             ),
           ],
           const SizedBox(height: 20),
@@ -214,13 +215,13 @@ class _TotalCard extends StatelessWidget {
     required this.color,
     required this.background,
     required this.icon,
-    this.onTap,
+    required this.onTap,
   });
   final String title, hint;
   final BigInt? amount;
   final Color color, background;
   final IconData icon;
-  final VoidCallback? onTap;
+  final VoidCallback onTap;
   @override
   Widget build(BuildContext context) => Material(
     color: background,
@@ -231,6 +232,7 @@ class _TotalCard extends StatelessWidget {
       ),
     ),
     child: InkWell(
+      key: ValueKey('total-card-$title'),
       onTap: onTap,
       borderRadius: BorderRadius.circular(10),
       child: Padding(
@@ -248,8 +250,7 @@ class _TotalCard extends StatelessWidget {
                     style: TextStyle(color: color, fontSize: 14),
                   ),
                 ),
-                if (onTap != null)
-                  Icon(Icons.north_east, color: color, size: 16),
+                Icon(Icons.north_east, color: color, size: 16),
               ],
             ),
             const SizedBox(height: 9),
@@ -284,4 +285,3 @@ class _TotalCard extends StatelessWidget {
     ),
   );
 }
-

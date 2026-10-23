@@ -112,3 +112,21 @@ Play Store release with production signing.
 Android release-mode APK built successfully (52 MB): releases/Daybook.apk. It connects to the live Supabase project; DAYBOOK_DEMO is not enabled.
 
 Startup configuration fix: ordinary Flutter launches now load config/supabase.json as a bundled asset; paired build-time overrides remain supported. This removes the missing-build-flag startup failure. Public client settings only; no secret keys are bundled.
+
+## Entry deletion
+
+Added Delete entry below Edit entry in the transaction details sheet. The user
+confirms the action, then history and totals refresh. A 10-second Undo action
+restores the entry. Both operations match account, ID, current version and prior
+deleted state, protecting against stale edits. Failed requests show an error.
+Deleted records remain in Supabase with is_deleted=true; no permanent DELETE
+permission is granted. The history RPC excludes those records from search,
+pagination, totals and export. Old installed apps also receive filtered history.
+After the Undo message expires, recovery requires a database restore of the flag;
+there is no trash screen yet. Archived accounts must be restored before changing
+entries, including deletion and Undo.
+
+Migration 202610230002_entry_deletion.sql is applied to the hosted project.
+Validation: 17 Flutter tests and 31 local PostgreSQL checks passed; analyzer clean.
+
+Live Flutter verification passed: deleted the existing DUMMY fuel expense, observed zero entries and zero expense total, then used Undo and observed the same entry and INR 225.75 restored. No business records were touched.

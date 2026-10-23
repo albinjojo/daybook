@@ -11,6 +11,7 @@ const fail = async (query,params=[]) => {
 try {
   await db.exec('create role anon; create role authenticated; create role service_role bypassrls;');
   await db.exec(await sql('../supabase/migrations/202610230001_daybook.sql'));
+  await db.exec(await sql('../supabase/migrations/202610230002_entry_deletion.sql'));
   await db.exec('set role anon');
   await fail('select * from public.accounts');
   await fail("select public.daybook_history(gen_random_uuid(),'2026-10-01','2026-11-01')");
@@ -49,6 +50,14 @@ try {
   const first=await db.query("update public.transactions set name='Changed' where id=$1 and version=1 returning version",[one]);
   ok(first.rows[0].version===2,'Version increments on edit');
   ok((await db.query("update public.transactions set name='Stale edit' where id=$1 and version=1 returning id",[one])).rows.length===0,'Stale edits rejected');
+    const deleted = await db.query('update public.transactions set is_deleted=true where id=$1 and version=1 returning version',[two]);
+  ok(deleted.rows[0].version===2,'Delete increments version');
+  ok((await history()).count===1 && (await history()).spent_paise==='0','Deleted entry excluded from history and totals');
+  ok((await history(null,'Fuel')).count===0,'Deleted entry excluded from search');
+  ok((await db.query('select id from public.transactions where id=$1',[two])).rows.length===1,'Delete retains recoverable record');
+  ok((await db.query('update public.transactions set is_deleted=false where id=$1 and version=1 returning id',[two])).rows.length===0,'Stale undo rejected');
+  await db.query('update public.transactions set is_deleted=false where id=$1 and version=2',[two]);
+  ok((await history()).count===2 && (await history()).spent_paise==='2000','Undo restores history and totals');
   await db.query('update public.accounts set is_archived=true where id=$1',[a]);
   await fail("insert into public.transactions(account_id,type,amount_paise,name) values ($1,'spent',1,'Archived')",[a]);
   ok((await history()).count===2,'Archived history stays available');

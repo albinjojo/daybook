@@ -93,3 +93,5 @@ PostgreSQL via PGlite. These tests do not contact the hosted Supabase project.
 
 
 
+
+Entry deletion uses transactions.is_deleted (migration 202610230002). Deleted records are excluded centrally by daybook_filtered_transactions; hard-delete stays denied. Delete/Undo use the same repository boundary and optimistic versions as editing. Undo is offered for 10 seconds; no trash screen is implemented.

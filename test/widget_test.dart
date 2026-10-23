@@ -24,6 +24,81 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  testWidgets('whole total cards open the matching entry list', (tester) async {
+    await start(tester);
+    await tester.tap(find.text('Innova'));
+    await tester.pumpAndSettle();
+    for (final title in ['Money received', 'Money spent', 'Balance']) {
+      for (final tapAmount in [true, false]) {
+        final card = find.byKey(ValueKey('total-card-$title'));
+        await tester.ensureVisible(card);
+        await tester.pumpAndSettle();
+        final bounds = tester.getRect(card);
+        // Exercise the amount area and blank bottom padding, away from the arrow.
+        await tester.tapAt(
+          tapAmount
+              ? Offset(bounds.left + 65, bounds.bottom - 30)
+              : Offset(bounds.center.dx, bounds.bottom - 5),
+        );
+        await tester.pumpAndSettle();
+        final history = tester.widget<HistoryScreen>(
+          find.byType(HistoryScreen),
+        );
+        expect(history.account.name, 'Innova');
+        expect(history.month.month, DateTime.now().month);
+        expect(
+          history.type,
+          title == 'Money received'
+              ? EntryType.received
+              : title == 'Money spent'
+              ? EntryType.spent
+              : null,
+        );
+        expect(
+          find.text('Diesel'),
+          title == 'Money received' ? findsNothing : findsOneWidget,
+        );
+        expect(
+          find.text('Chennai airport trip'),
+          title == 'Money spent' ? findsNothing : findsOneWidget,
+        );
+        Navigator.of(tester.element(find.byType(HistoryScreen))).pop();
+        await tester.pumpAndSettle();
+      }
+    }
+    expect(tester.takeException(), isNull);
+  });
+  testWidgets('delete confirmation, updated total and Undo', (tester) async {
+    final repo = PreviewLedgerRepository();
+    await start(tester, repository: repo);
+    await tester.tap(find.text('Innova'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('View expenses'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Diesel'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Delete entry'));
+    await tester.tap(find.text('Delete entry'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    expect(repo.deletedIds, isEmpty);
+    await tester.tap(find.text('Diesel'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Delete entry'));
+    await tester.tap(find.text('Delete entry'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Delete'));
+    await tester.pumpAndSettle();
+    expect(find.text('Diesel'), findsNothing);
+    expect(find.text('₹6,350'), findsOneWidget);
+    await tester.tap(find.text('Undo'));
+    await tester.pumpAndSettle();
+    expect(find.text('Diesel'), findsOneWidget);
+    expect(find.text('₹9,550'), findsOneWidget);
+    expect(repo.deletedIds, isEmpty);
+    expect(tester.takeException(), isNull);
+  });
   testWidgets('phone navigation, filtered totals, search, details and edit', (
     tester,
   ) async {

@@ -303,11 +303,13 @@ class _EntryEditorState extends State<EntryEditor> {
   );
 }
 
-Future<bool?> showEntryDetails(
+enum EntryAction { edit, delete }
+
+Future<EntryAction?> showEntryDetails(
   BuildContext context,
   LedgerAccount account,
   LedgerEntry entry,
-) => showModalBottomSheet<bool>(
+) => showModalBottomSheet<EntryAction>(
   context: context,
   isScrollControlled: true,
   builder: (_) => SheetLayout(
@@ -334,8 +336,18 @@ Future<bool?> showEntryDetails(
       ...entry.draft.details.map((d) => _DetailRow(d.label, d.value)),
       const SizedBox(height: 24),
       FilledButton(
-        onPressed: () => Navigator.pop(context, true),
+        onPressed: () => Navigator.pop(context, EntryAction.edit),
         child: const Text('Edit entry'),
+      ),
+      const SizedBox(height: 10),
+      TextButton.icon(
+        onPressed: () => Navigator.pop(context, EntryAction.delete),
+        style: TextButton.styleFrom(
+          foregroundColor: red,
+          minimumSize: const Size(double.infinity, 48),
+        ),
+        icon: const Icon(Icons.delete_outline, size: 20),
+        label: const Text('Delete entry'),
       ),
     ],
   ),

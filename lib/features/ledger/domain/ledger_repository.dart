@@ -21,6 +21,12 @@ abstract interface class LedgerRepository {
     required EntryDraft draft,
   });
   Future<LedgerEntry> updateEntry(LedgerEntry entry, EntryDraft draft);
+
+  /// Reversible deletion. The returned version is required when undoing it.
+  Future<LedgerEntry> setEntryDeleted(
+    LedgerEntry entry, {
+    required bool deleted,
+  });
   Future<HistoryPage> history(
     HistoryFilter filter, {
     int limit = 50,

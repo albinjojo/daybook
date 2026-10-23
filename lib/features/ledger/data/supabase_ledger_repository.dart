@@ -117,6 +117,7 @@ final class SupabaseLedgerRepository implements LedgerRepository {
         final row = await _client
             .from('transactions')
             .update(draft.toJson())
+            .eq('is_deleted', false)
             .eq('id', entry.id)
             .eq('account_id', entry.accountId)
             .eq('version', entry.version)
@@ -130,6 +131,29 @@ final class SupabaseLedgerRepository implements LedgerRepository {
         }
         return LedgerEntry.fromJson(row);
       });
+
+  @override
+  Future<LedgerEntry> setEntryDeleted(
+    LedgerEntry entry, {
+    required bool deleted,
+  }) => _request(() async {
+    final row = await _client
+        .from('transactions')
+        .update({'is_deleted': deleted})
+        .eq('id', entry.id)
+        .eq('account_id', entry.accountId)
+        .eq('version', entry.version)
+        .eq('is_deleted', !deleted)
+        .select()
+        .maybeSingle();
+    if (row == null) {
+      throw const LedgerFailure(
+        'conflict',
+        'This entry changed. Refresh and try again.',
+      );
+    }
+    return LedgerEntry.fromJson(row);
+  });
 
   @override
   Future<HistoryPage> history(

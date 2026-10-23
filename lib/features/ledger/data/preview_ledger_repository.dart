@@ -151,7 +151,7 @@ class PreviewLedgerRepository implements LedgerRepository {
     final i = entries.indexWhere(
       (e) => e.id == entry.id && e.version == entry.version,
     );
-    if (i < 0) {
+    if (i < 0 || deletedIds.contains(entry.id)) {
       throw const LedgerFailure(
         'conflict',
         'This entry changed. Refresh and try again.',
@@ -166,6 +166,37 @@ class PreviewLedgerRepository implements LedgerRepository {
   }
 
   @override
+  Future<LedgerEntry> setEntryDeleted(
+    LedgerEntry entry, {
+    required bool deleted,
+  }) async {
+    final i = entries.indexWhere(
+      (e) =>
+          e.id == entry.id &&
+          e.accountId == entry.accountId &&
+          e.version == entry.version,
+    );
+    if (i < 0 || deletedIds.contains(entry.id) == deleted) {
+      throw const LedgerFailure(
+        'conflict',
+        'This entry changed. Refresh and try again.',
+      );
+    }
+    if (deleted) {
+      deletedIds.add(entry.id);
+    } else {
+      deletedIds.remove(entry.id);
+    }
+    return entries[i] = LedgerEntry(
+      id: entry.id,
+      accountId: entry.accountId,
+      draft: entry.draft,
+      version: entry.version + 1,
+    );
+  }
+
+  final deletedIds = <String>{};
+  @override
   Future<HistoryPage> history(
     HistoryFilter filter, {
     int limit = 50,
@@ -175,6 +206,7 @@ class PreviewLedgerRepository implements LedgerRepository {
         entries
             .where(
               (e) =>
+                  !deletedIds.contains(e.id) &&
                   e.accountId == filter.accountId &&
                   e.draft.date.compareTo(filter.startDate) >= 0 &&
                   e.draft.date.compareTo(filter.endDate) < 0 &&

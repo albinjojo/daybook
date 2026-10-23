@@ -96,7 +96,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   Future<void> inspect(LedgerEntry entry) async {
     final edit = await showEntryDetails(context, widget.account, entry);
-    if (edit == true && mounted) {
+    if (edit == EntryAction.delete && mounted) {
+      await confirmDelete(entry);
+      return;
+    }
+    if (edit == EntryAction.edit && mounted) {
       final result = await showEntryEditor(
         context,
         widget.repository,
@@ -109,6 +113,67 @@ class _HistoryScreenState extends State<HistoryScreen> {
         widget.onMonthChanged(month);
         load();
       }
+    }
+  }
+
+  Future<void> confirmDelete(LedgerEntry entry) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete this entry?'),
+        content: Text(
+          'Remove “${entry.draft.name}” from this account and its totals? You can undo this after deleting.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: TextButton.styleFrom(foregroundColor: red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && mounted) {
+      await changeDeleted(entry, true);
+    }
+  }
+
+  bool changingEntry = false;
+  Future<void> changeDeleted(LedgerEntry entry, bool deleted) async {
+    if (changingEntry) return;
+    changingEntry = true;
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.hideCurrentSnackBar();
+    try {
+      final updated = await widget.repository.setEntryDeleted(
+        entry,
+        deleted: deleted,
+      );
+      if (!mounted) return;
+      await load();
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(deleted ? 'Entry deleted' : 'Entry restored'),
+          duration: const Duration(seconds: 10),
+          action: deleted
+              ? SnackBarAction(
+                  label: 'Undo',
+                  onPressed: () => changeDeleted(updated, false),
+                )
+              : null,
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        messenger.showSnackBar(SnackBar(content: Text(failureMessage(e))));
+      }
+    } finally {
+      changingEntry = false;
     }
   }
 

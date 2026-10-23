@@ -5,7 +5,7 @@ Target project: `nneedwxmflhqsbtudmry`.
 Status: initial migration applied and verified on 23 October 2026. Do not rerun it. Public demo read/add/edit access was explicitly approved and enabled on 23 October 2026. Live Flutter saving, editing and reloading passed. Steps below are retained for reference or fresh environments; do not rerun the enable script.
 
 1. Open that project in Supabase and choose SQL Editor → New query.
-2. Paste `supabase/migrations/202610230001_daybook.sql` and run it once.
+2. For a fresh database, run `supabase/migrations/202610230001_daybook.sql`, then `supabase/migrations/202610230002_entry_deletion.sql`, in that order, once each.
    It is atomic: any error rolls back this migration. It does not overwrite or
    drop existing tables. If these table names already exist, stop and reconcile
    their schema instead of deleting data or repeatedly running the migration.
@@ -46,4 +46,7 @@ process. Keep future changes as new migrations rather than editing the installed
 initial migration. Test restore separately; CSV exports are useful for reading
 transactions but are not a full schema/permissions backup.
 
+
+
+The entry-deletion migration was applied to this project on 23 October 2026. Do not rerun it. It adds is_deleted and filters deleted entries out of history, totals and CSV exports. Hard DELETE remains denied. Existing records are preserved; the app offers Undo after deleting.
 
